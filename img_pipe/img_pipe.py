@@ -17,6 +17,7 @@ import pickle
 import shutil
 import argparse
 import inspect
+import pdb
 
 import nibabel as nib
 from tqdm import tqdm
@@ -45,34 +46,35 @@ from .plotting.mlab_3D_to_2D import get_world_to_view_matrix, get_view_to_displa
 linear = lambda x, y, m: (1.-m)*x + m*y
 mixes = dict(
     linear=linear,
-    smoothstep=(lambda x, y, m: linear(x,y,3*m**2 - 2*m**3)),
+    smoothstep=(lambda x, y, m: linear(x, y, 3*m**2 - 2*m**3)),
     smootherstep=(lambda x, y, m: linear(x, y, 6*m**5 - 15*m**4 + 10*m**3))
 )
 
+
 class freeCoG:
-    ''' This defines the class freeCoG, which creates a patient object      
-    for use in creating brain surface reconstructions, electrode placement,     
-    and warping.        
-    
-    To initialize a patient, you must provide the subject ID, hemisphere,       
-    freesurfer subjects directory, and (optionally) the freesurfer      
-    executable directory. If these aren't specified they will default to the environment
-    variables $SUBJECTS_DIR and $FREESURFER_HOME.
-    
-    For example:        
-    
-    >>> subj = 'EC1'     
-    >>> subj_dir = '/usr/local/freesurfer/subjects'      
-    >>> hem = 'rh'       
-    >>> fs_dir = '/usr/local/freesurfer'     
+    ''' This defines the class freeCoG, which creates a patient object
+    for use in creating brain surface reconstructions, electrode placement,
+    and warping.
+
+    To initialize a patient, you must provide the subject ID, hemisphere,
+    freesurfer subjects directory, and (optionally) the freesurfer
+    executable directory. If these aren't specified they will default to the
+    environment variables $SUBJECTS_DIR and $FREESURFER_HOME.
+
+    For example:
+
+    >>> subj = 'EC1'
+    >>> subj_dir = '/usr/local/freesurfer/subjects'
+    >>> hem = 'rh'
+    >>> fs_dir = '/usr/local/freesurfer'
     >>> patient = img_pipe.freeCoG(subj = subj, subj_dir = subj_dir, hem = hem, fs_dir = fs_dir)
-    
+
     Parameters
-    ----------       
-    subj : str 
-           The subject ID      
+    ----------
+    subj : str
+           The subject ID
     hem : {'lh', 'rh', 'stereo'}
-          The hemisphere of implanation. Can be 'lh', 'rh', or 'stereo'.        
+          The hemisphere of implanation. Can be 'lh', 'rh', or 'stereo'.
     zero_indexed_electrodes: bool, optional
                              Whether or not to use zero-indexing for the electrode numbers (default: True)
     fs_dir : str, optional
@@ -80,7 +82,7 @@ class freeCoG:
     subj_dir : str, optional
                the freesurfer subjects directory (e.g. /usr/local/freesurfer/subjects). Default
                is the $SUBJECTS_DIR environmental variable set by Freesurfer.
-    
+
     Attributes
     ----------
     subj : str
@@ -127,11 +129,11 @@ class freeCoG:
         Initializes the patient object.
 
         Parameters
-        ----------       
-        subj : str 
-            The subject ID (e.g. 'SUBJ_25')     
+        ----------
+        subj : str
+            The subject ID (e.g. 'SUBJ_25')
         hem : {'lh', 'rh', 'stereo'}
-            The hemisphere of implanation. Can be 'lh', 'rh', or 'stereo'.        
+            The hemisphere of implanation. Can be 'lh', 'rh', or 'stereo'.
         zero_indexed_electrodes: bool, optional
             Whether or not to use zero-indexing for the electrode numbers (default: True)
         fs_dir : str, optional
@@ -2122,9 +2124,13 @@ class freeCoG:
             mlab.close()
 
         return mesh, points, mlab, arr, fh
-    
-    def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, showfig=True, screenshot=False, 
-                           opacity=1.0, show_numbers=True):
+
+    def plot_recon_anatomy(
+        self, elecfile_prefix='TDT_elecs_all', template=None, showfig=True,
+        screenshot=False, opacity=1.0, show_numbers=True,
+        marker_size=2, GRID_ONLY=False, COLOR_ELECTRODES=True, SHOW_TITLE=True,
+        save_dir=None,
+    ):
         '''
         Plot the brain along with all of the anatomically labeled electrodes, colored by location using freesurfer
         color lookup table.
@@ -2145,6 +2151,9 @@ class freeCoG:
         '''
         from .plotting import ctmr_brain_plot as ctmr_brain_plot
         from .SupplementalFiles import FS_colorLUT as FS_colorLUT
+
+        # set up the directory for saving the figure
+        save_dir = self.patient_dir if save_dir is None else save_dir
 
         a = self.get_surf(template=template)
         e = self.get_elecs(elecfile_prefix=elecfile_prefix)
@@ -2188,11 +2197,14 @@ class freeCoG:
                 if b[0][0:3]!='ctx' and b[0][0:4] != 'Left' and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain' and b[0] != 'Unknown':
                     this_label = 'ctx-%s-%s'%(label_hem, b[0])
                     print(this_label)
-                
+
                 if this_label != '' and this_label != 'NaN':
                     if this_label not in cmap:
-                        #in case the label was manually assigned, and not found in the LUT colormap dictionary
-                        el_color = matplotlib.cm.get_cmap('viridis').colors[int(float(np.where(brain_areas==b)[0])/float(len(brain_areas)))]
+                        # in case the label was manually assigned, and not
+                        #  found in the LUT colormap dictionary
+                        el_color = matplotlib.cm.get_cmap('viridis').colors[
+                            int(float(np.where(brain_areas == b)[0])/float(len(
+                                brain_areas)))]
                     else:
                         el_color = np.array(cmap[this_label])/255.
                     color_list.append(el_color)
@@ -2207,30 +2219,43 @@ class freeCoG:
         else:
             elec_numbers = None
 
-        ctmr_brain_plot.el_add(e['elecmatrix'],elec_colors,numbers=elec_numbers, label_offset=label_offset)
+        # ...
+        if COLOR_ELECTRODES is False:
+            elec_colors = 0*elec_colors + 0.25
 
-        if self.hem=='lh':
-            azimuth=180
-        elif self.hem=='rh':
-            azimuth=0
+        ctmr_brain_plot.el_add(
+            e['elecmatrix'], elec_colors, numbers=elec_numbers,
+            label_offset=label_offset, msize=marker_size
+        )
+
+        if self.hem == 'lh':
+            azimuth = 180
+        elif self.hem == 'rh':
+            azimuth = 0
         else:
-            azimuth=90
+            azimuth = 90
 
         mlab.view(azimuth, elevation=90)
 
-        mlab.title('%s recon anatomy'%(self.subj),size=0.3)
+        if SHOW_TITLE:
+            mlab.title('%s recon anatomy' % (self.subj), size=0.3)
 
-        #arr = mlab.screenshot(antialiased=True)
+        # see https://github.com/enthought/mayavi/issues/702
+        f = mlab.gcf()
+        f.scene._lift()
+
         if screenshot:
-            plt.figure(figsize=(20,20))
+            arr = mlab.screenshot(antialiased=True)
+            plt.figure(figsize=(20, 20))
             arr, xoff, yoff = remove_whitespace(arr)
             plt.imshow(arr, aspect='equal')
             plt.axis('off')
-            dummies = [plt.gca().plot([],[], ls='-', lw=5, c=c)[0] for c in color_list]
+            dummies = [plt.gca().plot([], [], ls='-', lw=5, c=c)[0]
+                       for c in color_list]
             plt.gca().legend(dummies, good_labels, ncol=4)
             plt.tight_layout()
             plt.show()
-            plt.savefig(os.path.join(self.patient_dir, '%s_anatomy.png'%self.subj))
+            plt.savefig(os.path.join(save_dir, '%s_anatomy.png' % self.subj))
         if showfig:
             mlab.show()
         #else:
@@ -2673,7 +2698,7 @@ class freeCoG:
             show figure or not.
         kwargs: goes to ctmr_gauss_plot. e.g. ambient, specular, diffuse, etc.
         """
-        
+
         from mayavi import mlab
         from .plotting.ctmr_brain_plot import ctmr_gauss_plot
 
@@ -2721,7 +2746,7 @@ class freeCoG:
         Parameters
         ----------
         hem : {None, 'lh', 'rh', 'both'}
-            Hemisphere to show. If None, defaults to self.hem.  
+            Hemisphere to show. If None, defaults to self.hem.
         azimuth : float
             Azimuth for brain plot. Normally azimuth=180 for lh, azimuth=0 for rh
         elevation : float
@@ -2739,15 +2764,15 @@ class freeCoG:
         elecs_2D_file: (optional) None or str
             Filename used when saving electrode position file. If None,
             filename is automatically generated based on view orientation.
-        
-        Returnsbr
+
+        Returns
         -------
         brain_image : array-like
             2D brain image
         elecmatrix_2D : array-like
             elecs x 2 matrix of coordinates in 2D that match brain_image and
             can be plotted using matplotlib pyplot instead of mayavi.
-        
+
         """
         from PIL import Image
 

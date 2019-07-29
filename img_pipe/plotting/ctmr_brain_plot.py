@@ -31,6 +31,9 @@ from mayavi import mlab
 import numpy as np
 import matplotlib as mpl
 from matplotlib import cm
+import pdb
+from tvtk.api import tvtk
+
 
 def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
                     opacity = 1.0, representation='surface', line_width=1.0, gsp = 10,
@@ -96,17 +99,21 @@ def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
         if type(cmap) == str:
             kwargs.update(colormap=cmap)
 
-        mesh = mlab.triangular_mesh(vert[:, 0], vert[:, 1], vert[:, 2], tri,
-                                    representation=representation, opacity=opacity,
-                                    line_width=line_width, scalars=brain_color,
-                                    vmin=vmin, vmax=vmax, **kwargs)
+        mesh = mlab.triangular_mesh(
+            vert[:, 0], vert[:, 1], vert[:, 2], tri,
+            representation=representation, opacity=opacity,
+            line_width=line_width, scalars=brain_color,
+            vmin=vmin, vmax=vmax, **kwargs
+        )
 
         if type(cmap) == mpl.colors.LinearSegmentedColormap:
             mesh.module_manager.scalar_lut_manager.lut.table = (cmap(np.linspace(0, 1, 255)) * 255).astype('int')
     else:
-        mesh = mlab.triangular_mesh(vert[:, 0], vert[:, 1], vert[:, 2], tri,
-                                color=color, representation=representation,
-                                opacity=opacity, line_width=line_width)
+        mesh = mlab.triangular_mesh(
+            vert[:, 0], vert[:, 1], vert[:, 2], tri,
+            color=color, representation=representation,
+            opacity=opacity, line_width=line_width
+        )
 
     # cell_data = mesh.mlab_source.dataset.cell_data
     # cell_data.scalars = brain_color
@@ -131,12 +138,17 @@ def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
     # Make the mesh look smoother
     for child in mlab.get_engine().scenes[0].children:
         poly_data_normals = child.children[0]
-        poly_data_normals.filter.feature_angle = 80.0 # Feature angle says which angles are considered hard corners
+        if hasattr(poly_data_normals, 'filters'):
+            # Feature angle says which angles are considered hard corners
+            poly_data_normals.filter.feature_angle = 80.0
 
     return mesh, mlab
 
 
-def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=-1.0, ambient = 0.3261, specular = 1, specular_power = 16, diffuse = 0.6995, interpolation = 'phong', **kwargs):
+def el_add(
+    elecs, color=(1., 0., 0.), msize=2, numbers=None, label_offset=-1.0,
+    ambient=0.3261, specular=1, specular_power=16, diffuse=0.6995,
+    interpolation='phong', elec_sizes=None, **kwargs):
     '''This function adds the electrode matrix [elecs] (nchans x 3) to
     the scene.
     
@@ -160,21 +172,36 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=
 
     # Allow the user to override the default keyword arguments using kwargs
     cur_kwargs.update(kwargs)
-    
+
     # plot the electrodes as spheres
     # If we have one color for each electrode, color them separately
     if type(color) is np.ndarray:
-        if color.shape[0] == elecs.shape[0]:
-            # for e in np.arange(elecs.shape[0]):
-            #     points = mlab.points3d(elecs[e,0], elecs[e,1], elecs[e,2], scale_factor = msize,
-            #                        color = tuple( color[e,:] ) , resolution=25)
-            unique_colors = np.array(list(set([tuple(row) for row in color])))
-            for individual_color in unique_colors:
-                indices = np.where((color==individual_color).all(axis=1))[0]
-                cur_kwargs.update(color=tuple(individual_color))
-                points = mlab.points3d(elecs[indices,0],elecs[indices,1],elecs[indices,2], **cur_kwargs)
-        else:
-            print('Warning: color array does not match size of electrode matrix')
+        cur_kwargs.pop('color')
+        cur_kwargs.pop('scale_factor')
+        if type(msize) is not np.ndarray:
+            # ...then make it so
+            ####
+            msize = np.full(color.shape, msize/20)
+            # Why 1/20?  Not sure, but that appears to be produce the same size
+            #  spheres as the old method.
+            ####
+        points = mlab.points3d(elecs[:,0], elecs[:,1], elecs[:,2], **cur_kwargs)
+        points.glyph.scale_mode = 'scale_by_vector'
+        sc = tvtk.UnsignedCharArray()
+        sc.from_array(color*256)
+        points.mlab_source.dataset.point_data.scalars = sc
+        points.mlab_source.dataset.point_data.vectors = msize
+    #     if color.shape[0] == elecs.shape[0]:
+    #         # for e in np.arange(elecs.shape[0]):
+    #         #     points = mlab.points3d(elecs[e,0], elecs[e,1], elecs[e,2], scale_factor = msize,
+    #         #                        color = tuple( color[e,:] ) , resolution=25)
+    #         unique_colors = np.array(list(set([tuple(row) for row in color])))
+    #         for individual_color in unique_colors:
+    #             indices = np.where((color==individual_color).all(axis=1))[0]
+    #             cur_kwargs.update(color=tuple(individual_color))
+    #             points = mlab.points3d(elecs[indices,0],elecs[indices,1],elecs[indices,2], **cur_kwargs)
+    #     else:
+    #         print('Warning: color array does not match size of electrode matrix')
 
     # Otherwise, use the same color for all electrodes
     else:
@@ -190,6 +217,8 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=
 
     if numbers is not None:
         for ni, n in enumerate(numbers):
-            mayavi.mlab.text3d(elecs[ni,0]+label_offset, elecs[ni,1], elecs[ni,2], str(n), orient_to_camera=True) #line_width=5.0, scale=1.5)
+            mayavi.mlab.text3d(
+                elecs[ni, 0]+label_offset, elecs[ni, 1], elecs[ni, 2], str(n),
+                orient_to_camera=True)  # line_width=5.0, scale=1.5)
 
     return points, mlab
