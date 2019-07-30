@@ -1859,17 +1859,17 @@ class freeCoG:
         elecfile = os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix))
         if os.path.isfile(elecfile):
             e = scipy.io.loadmat(elecfile)
-            if roi != None:
-                roi_indices = np.where(e['anatomy'][:,3]==roi)[0]
-                elecmatrix = e['elecmatrix'][roi_indices,:]
-                anatomy = e['anatomy'][roi_indices,:]
+            if roi is not None:
+                roi_indices = np.where(e['anatomy'][:, 3] == roi)[0]
+                elecmatrix = e['elecmatrix'][roi_indices, :]
+                anatomy = e['anatomy'][roi_indices, :]
             else:
                 elecfile = scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
                 return elecfile
 
             e = {'elecmatrix': elecmatrix, 'anatomy': anatomy} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
         else:
-            print('File not found: %s'%(elecfile))
+            print('File not found: %s' % (elecfile))
         return e
 
     def get_surf(self, hem='', roi='pial', template=None):
@@ -1895,7 +1895,7 @@ class freeCoG:
             hem = self.hem
         if roi == 'pial':
             if hem == 'lh' or hem == 'rh':
-                if template == None:
+                if template is None:
                     cortex = scipy.io.loadmat(self.pial_surf_file[hem])
                 else:
                     template_file = os.path.join(self.subj_dir, template, 'Meshes', hem+'_pial_trivert.mat')
@@ -1903,12 +1903,12 @@ class freeCoG:
             elif hem == 'stereo':
                 cortex = dict()
                 for h in ['lh', 'rh']:
-                    if template == None:
+                    if template is None:
                         cortex[h] = scipy.io.loadmat(self.pial_surf_file[h])
                     else:
                         template_file = os.path.join(self.subj_dir, template, 'Meshes', h+'_pial_trivert.mat')
                         cortex[h] = scipy.io.loadmat(template_file)
-        else: 
+        else:
             cortex = scipy.io.loadmat(os.path.join(self.mesh_dir, hem + '_' + roi + '_trivert.mat'))
         return cortex
 
@@ -2014,7 +2014,7 @@ class freeCoG:
             See get_rois() method for available ROI names.
         elecs : array-like
             [nchans x 3] electrode coordinate matrix
-        weights : array-like 
+        weights : array-like
             [nchans x 3] weight matrix associated with the electrode coordinate matrix
         cmap : str
             String specifying what colormap to use
@@ -2024,7 +2024,7 @@ class freeCoG:
             whether to save a screenshot and show using matplotlib (usually inline a notebook)
         helper_call : bool
             if plot_brain being used as a helper subcall, don't close the mlab instance
-        vmin : float 
+        vmin : float
             Minimum color value when using cmap
         vmax : float
             Maximum color value when using cmap
@@ -2057,14 +2057,15 @@ class freeCoG:
 
         fh=mayavi.mlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1), size=(1200,900))
 
-        #if there are any rois with gaussian set to True, don't plot any elecs as points3d, to avoid mixing gaussian representation
-        #if needed, simply add the elecs by calling el_add
+        # if there are any rois with gaussian set to True, don't plot any elecs
+        #  as points3d, to avoid mixing gaussian representation
+        # if needed, simply add the elecs by calling el_add
         any_gaussian = False
 
         for roi in rois:
             roi_name, color, opacity, representation, gaussian = roi.name, roi.color, roi.opacity, roi.representation, roi.gaussian
 
-            #if color or opacity == None, then use default values 
+            # if color or opacity == None, then use default values 
             if color is None:
                 color = (0.8, 0.8, 0.8)
             if opacity is None:
@@ -2082,9 +2083,9 @@ class freeCoG:
             if gaussian:
                 kwargs.update(elecs=elecs, weights=weights, vmin=vmin, vmax=vmax)
 
-            #default roi_name of 'pial' plots both hemispheres' pial surfaces
-            if roi_name  in ('pial', 'rh_pial', 'lh_pial'):
-                #use pial surface of the entire hemisphere
+            # default roi_name of 'pial' plots both hemispheres' pial surfaces
+            if roi_name in ('pial', 'rh_pial', 'lh_pial'):
+                # use pial surface of the entire hemisphere
                 if roi_name in ('pial', 'lh_pial'):
                     lh_pial = self.get_surf(hem='lh', template=template)
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'], lh_pial['vert'], **kwargs)
@@ -2094,7 +2095,7 @@ class freeCoG:
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'], rh_pial['vert'], **kwargs)
 
             else:
-                subcort_dir = os.path.join(self.mesh_dir,'subcortical')
+                subcort_dir = os.path.join(self.mesh_dir, 'subcortical')
                 if os.path.isdir(subcort_dir) and '%s_subcort_trivert.mat'%(roi_name) in os.listdir(subcort_dir):
                     roi_mesh = scipy.io.loadmat(os.path.join(subcort_dir,'%s_subcort_trivert.mat'%(roi_name)))
                 else:
@@ -2103,7 +2104,7 @@ class freeCoG:
                 mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'], roi_mesh['vert'], **kwargs)
 
         if not any_gaussian and elecs is not None:
-            if weights is None: #if elecmatrix passed in but no weights specified, default to all ones for the electrode color weights
+            if weights is None:  # if elecmatrix passed in but no weights specified, default to all ones for the electrode color weights
                 points, mlab = ctmr_brain_plot.el_add(elecs)
             else:
                 # Map the weights onto the current colormap
@@ -2111,7 +2112,7 @@ class freeCoG:
                 points, mlab = ctmr_brain_plot.el_add(elecs, color = elec_colors)
 
         else:
-            #if no elecs to add as points3D
+            # if no elecs to add as points3D
             points = None
 
         if azimuth is None:
@@ -2210,12 +2211,12 @@ class freeCoG:
 
         mlab.view(azimuth, elevation=90)
 
-        if SHOW_TITLE:
-            mlab.title('%s recon anatomy' % (self.subj), size=0.3)
-
         # see https://github.com/enthought/mayavi/issues/702
         f = mlab.gcf()
         f.scene._lift()
+
+        if SHOW_TITLE:
+            mlab.title('%s recon anatomy' % (self.subj), size=0.3)
 
         if screenshot:
             arr = mlab.screenshot(antialiased=True)
@@ -2432,27 +2433,31 @@ class freeCoG:
         #  each brain area from the color LUT dictionary
         for b in brain_areas:
             # Add relevant extra information to the label if needed for the color LUT
-            if b[0][0] != 'NaN':
-                this_label = b[0]
-                good_labels.append(this_label)
+            if b[0] not in ['', 'NaN'] and b[0][0] != 'NaN':
                 if (b[0][0:3] != 'ctx' and b[0][0:4] != 'Left'
                         and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain'
                         and b[0] != 'Unknown'):
                     this_label = 'ctx-%s-%s' % (label_hem, b[0])
-                    print(this_label)
+                else:
+                    this_label = b[0]
+                print(this_label)
 
-                if this_label != '' and this_label != 'NaN':
-                    if this_label not in cmap:
-                        # in case the label was manually assigned, and not
-                        #  found in the LUT colormap dictionary
-                        el_color = matplotlib.cm.get_cmap('viridis').colors[
-                            int(float(np.where(brain_areas == b)[0])/float(len(
-                                brain_areas)))]
-                    else:
-                        el_color = np.array(cmap[this_label])/255.
-                    color_list.append(el_color)
-            elec_indices = np.where(e['anatomy'][:, 3] == b)[0]
-            elec_colors[elec_indices, :] = el_color
+                if this_label in cmap:
+                    el_color = np.array(cmap[this_label])/255.
+                else:
+                    # in case the label was manually assigned, and not
+                    #  found in the LUT colormap dictionary
+                    el_color = matplotlib.cm.get_cmap('viridis').colors[
+                        int(float(np.where(brain_areas == b)[0])/float(len(
+                            brain_areas)))]
+
+                # accumulate for legend
+                color_list.append(el_color)
+                good_labels.append(b[0])
+
+                # write this color into all appropriate slots in elec_colors
+                elec_indices = np.where(e['anatomy'][:, 3] == b)[0]
+                elec_colors[elec_indices, :] = el_color
 
         return good_labels, color_list, elec_colors
 
