@@ -1732,25 +1732,25 @@ class freeCoG:
         elecs = scipy.io.loadmat(elecfile)
         elec = elecs.get('elecmatrix')
         anatomy = elecs.get('anatomy')
-        
-        reorient_file =  os.path.join(self.subj_dir, self.subj, 'acpc', reorient_file+'.mat')
+
+        reorient_file = os.path.join(self.subj_dir, self.subj, 'acpc', reorient_file+'.mat')
         rmat = scipy.io.loadmat(reorient_file)['M']
         elecs_reoriented = nib.affines.apply_affine(rmat, elec)
-        
+
         print("Saving reoriented electrodes")
         reoriented_elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'_reoriented.mat')
         scipy.io.savemat(reoriented_elecfile, {'elecmatrix': elecs_reoriented, 'anatomy': anatomy})
         print("Done.")
 
-     #helper method to check the cvs depth warps:
     def plot_elec(self, orig_coords, warped_coords, subj_dat, cvs_dat, elec_num,pdf):
-        ''' helper method to check the cvs depth warps. Each electrode is one page      
-        in the resulting PDF.       
-        Top row shows electrodes warped to the CVS brain, bottom row shows the electrodes       
-        in their original position on the subject's brain. If the anatomical label      
-        for the warped location matches that of the original subject brain, it is counted       
-        as a "MATCH" and has a title in green, otherwise it is a "MISMATCH" and is      
-        marked with a red title.        
+        '''
+        helper method to check the cvs depth warps. Each electrode is one page
+        in the resulting PDF.
+        Top row shows electrodes warped to the CVS brain, bottom row shows the
+        electrodes in their original position on the subject's brain. If the
+        anatomical label for the warped location matches that of the original
+        subject brain, it is counted as a "MATCH" and has a title in green,
+        otherwise it is a "MISMATCH" and is marked with a red title.
         '''
 
         fs_lut = os.path.join(self.img_pipe_dir, 'SupplementalFiles', 'FreeSurferLUTRGBValues.npy')
@@ -1874,7 +1874,7 @@ class freeCoG:
 
     def get_surf(self, hem='', roi='pial', template=None):
         ''' Utility for loading the pial surface for a given hemisphere ('lh' or 'rh') 
-        
+
         Parameters
         ----------
         hem : {'', 'lh', 'rh'}
@@ -1884,7 +1884,7 @@ class freeCoG:
             in the subject's Meshes directory, called [roi]_trivert.mat
         template : str, optional
             Name of the template to use if plotting electrodes on an atlas brain. e.g. 'cvs_avg35_inMNI152'
-        
+
         Returns
         -------
         cortex : dict
@@ -1939,10 +1939,10 @@ class freeCoG:
             color : tuple
             opacity : float (between 0.0 and 1.0)
             representation : {'surface', 'wireframe'}
-            gaussian : bool 
+            gaussian : bool
 
             '''
-                       
+
             self.name = name
             self.color = color
             self.opacity = opacity
@@ -1950,48 +1950,64 @@ class freeCoG:
             self.gaussian = gaussian
 
     def get_rois(self):
-        ''' Method to get the list of all available ROI names for plotting 
-        
+        '''
+        Method to get the list of all available ROI names for plotting 
+
         Returns
         -------
         rois : list
             list of available regions of interest (ROIs) for plotting or making tri-vert meshes.
 
         '''
-        rois = ['rAcumb', 'rAmgd', 'rCaud', 'rGP', 'rHipp', 'rPut', 'rThal',
-                    'rLatVent', 'rInfLatVent', 'rVentDienceph', 'lLatVent', 'lInfLatVent',
-                    'lThal', 'lCaud', 'lPut',  'lGP', 'lHipp', 'lAmgd', 'lAcumb', 'lVentDienceph',
-                    'lThirdVent', 'lFourthVent', 'lBrainStem', 'pial', 'lh_pial', 'rh_pial', 'bankssts',
-                    'inferiorparietal', 'medialorbitofrontal', 'pericalcarine', 'superiorfrontal',
-                    'caudalanteriorcingulate', 'inferiortemporal', 'middletemporal','postcentral', 
-                    'superiorparietal', 'caudalmiddlefrontal', 'insula', 'paracentral', 'posteriorcingulate',
-                    'superiortemporal', 'cuneus', 'isthmuscingulate', 'parahippocampal', 'precentral',
-                    'supramarginal', 'entorhinal', 'lateraloccipital', 'parsopercularis', 'precuneus',
-                    'temporalpole', 'frontalpole', 'lateralorbitofrontal', 'parsorbitalis', 'rostralanteriorcingulate', 
-                    'transversetemporal', 'fusiform', 'lingual', 'parstriangularis', 'rostralmiddlefrontal']
+        rois = [
+            'rAcumb', 'rAmgd', 'rCaud', 'rGP', 'rHipp', 'rPut', 'rThal',
+            'rLatVent', 'rInfLatVent', 'rVentDienceph', 'lLatVent', 'lInfLatVent',
+            'lThal', 'lCaud', 'lPut',  'lGP', 'lHipp', 'lAmgd', 'lAcumb', 'lVentDienceph',
+            'lThirdVent', 'lFourthVent', 'lBrainStem', 'pial', 'lh_pial', 'rh_pial', 'bankssts',
+            'inferiorparietal', 'medialorbitofrontal', 'pericalcarine', 'superiorfrontal',
+            'caudalanteriorcingulate', 'inferiortemporal', 'middletemporal','postcentral', 
+            'superiorparietal', 'caudalmiddlefrontal', 'insula', 'paracentral', 'posteriorcingulate',
+            'superiortemporal', 'cuneus', 'isthmuscingulate', 'parahippocampal', 'precentral',
+            'supramarginal', 'entorhinal', 'lateraloccipital', 'parsopercularis', 'precuneus',
+            'temporalpole', 'frontalpole', 'lateralorbitofrontal', 'parsorbitalis', 'rostralanteriorcingulate', 
+            'transversetemporal', 'fusiform', 'lingual', 'parstriangularis', 'rostralmiddlefrontal'
+        ]
+
         return rois
 
     def run_annotation2label(self):
-        ''' Create the labels from the Desikan-Killiany Atlas, which can be used for labeling or for 
-        making ROIs. '''
-        #create gyri labels directory
+        '''
+        Create the labels from the Desikan-Killiany Atlas, which can be used
+        for labeling or for making ROIs.
+        '''
+
+        # create gyri labels directory
         gyri_labels_dir = os.path.join(self.subj_dir, self.subj, 'label', 'gyri')
         if not os.path.isdir(gyri_labels_dir):
             os.mkdir(gyri_labels_dir)
-            # This version of mri_annotation2label uses the coarse labels from the Desikan-Killiany Atlas
-            os.system('mri_annotation2label --subject %s --hemi %s --surface pial --outdir %s'\
-                %(self.subj, 'lh', gyri_labels_dir))
-            os.system('mri_annotation2label --subject %s --hemi %s --surface pial --outdir %s'\
-                %(self.subj, 'rh', gyri_labels_dir))
+            # This version of mri_annotation2label uses the coarse labels from
+            #  the Desikan-Killiany Atlas
+            os.system(
+                'mri_annotation2label --subject %s --hemi %s --surface pial --outdir %s'
+                % (self.subj, 'lh', gyri_labels_dir)
+            )
+            os.system(
+                'mri_annotation2label --subject %s --hemi %s --surface pial --outdir %s'
+                % (self.subj, 'rh', gyri_labels_dir)
+            )
 
-    def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=None, 
-                    weights=None, cmap = 'RdBu', showfig=True, screenshot=False, helper_call=False, vmin=None, vmax=None,
-                    azimuth=None, elevation=90, template=None):
+    def plot_brain(
+        self,
+        rois=[roi(name='pial', color=(0.8, 0.8, 0.8), opacity=1.0, representation='surface', gaussian=False)],
+        elecs=None, weights=None, cmap='RdBu', showfig=True, screenshot=False,
+        helper_call=False, vmin=None, vmax=None, azimuth=None, elevation=90,
+        template=None
+    ):
         '''Plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
-        
+
         Parameters
         ----------
-        rois : list of roi objects 
+        rois : list of roi objects
             (create an roi object like so:
             hipp_roi = patient.roi(name='lHipp', color=(0.5,0.1,0.8), opacity=1.0, 
 	                           representation='surface', gaussian=True)). 
@@ -2019,7 +2035,7 @@ class freeCoG:
             Elevation for brain view. Default: 90
         template : None or str
             Name of the template to use if plotting electrodes on an atlas brain. e.g. 'cvs_avg35_inMNI152'
-        
+
         Returns
         -------
         mesh : mayavi brain mesh
@@ -2038,7 +2054,7 @@ class freeCoG:
 
         import mayavi
         from .plotting import ctmr_brain_plot as ctmr_brain_plot
-        
+
         fh=mayavi.mlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1), size=(1200,900))
 
         #if there are any rois with gaussian set to True, don't plot any elecs as points3d, to avoid mixing gaussian representation
@@ -2049,15 +2065,15 @@ class freeCoG:
             roi_name, color, opacity, representation, gaussian = roi.name, roi.color, roi.opacity, roi.representation, roi.gaussian
 
             #if color or opacity == None, then use default values 
-            if color == None:
+            if color is None:
                 color = (0.8, 0.8, 0.8)
-            if opacity == None:
+            if opacity is None:
                 opacity = 1.0
-            if representation == None:
+            if representation is None:
                 representation = 'surface'
-            if gaussian == None:
+            if gaussian is None:
                 gaussian = False
-            if gaussian == True:
+            if gaussian is True:
                 any_gaussian = True
 
             # setup kwargs for ctmr_brain_plot.ctmr_gauss_plot()
@@ -2076,7 +2092,7 @@ class freeCoG:
                 if roi_name in ('pial', 'rh_pial'):
                     rh_pial = self.get_surf(hem='rh', template=template)
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'], rh_pial['vert'], **kwargs)
-                    
+
             else:
                 subcort_dir = os.path.join(self.mesh_dir,'subcortical')
                 if os.path.isdir(subcort_dir) and '%s_subcort_trivert.mat'%(roi_name) in os.listdir(subcort_dir):
@@ -2097,7 +2113,7 @@ class freeCoG:
         else:
             #if no elecs to add as points3D
             points = None
-        
+
         if azimuth is None:
             if self.hem == 'lh':
                 azimuth = 180
@@ -2128,8 +2144,7 @@ class freeCoG:
     def plot_recon_anatomy(
         self, elecfile_prefix='TDT_elecs_all', template=None, showfig=True,
         screenshot=False, opacity=1.0, show_numbers=True,
-        marker_size=2, GRID_ONLY=False, COLOR_ELECTRODES=True, SHOW_TITLE=True,
-        save_dir=None,
+        marker_size=2, GRID_ONLY=False, SHOW_TITLE=True, save_dir=None,
     ):
         '''
         Plot the brain along with all of the anatomically labeled electrodes, colored by location using freesurfer
@@ -2150,7 +2165,6 @@ class freeCoG:
 
         '''
         from .plotting import ctmr_brain_plot as ctmr_brain_plot
-        from .SupplementalFiles import FS_colorLUT as FS_colorLUT
 
         # set up the directory for saving the figure
         save_dir = self.patient_dir if save_dir is None else save_dir
@@ -2160,69 +2174,28 @@ class freeCoG:
 
         # Plot the pial surface
         if self.hem == 'lh' or self.hem == 'rh':
-            mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8), opacity=opacity)
+            mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(
+                a['tri'], a['vert'], color=(0.8, 0.8, 0.8), opacity=opacity)
         elif self.hem == 'stereo':
-            mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['lh']['tri'], a['lh']['vert'], color=(0.8, 0.8, 0.8), opacity=opacity)
-            mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['rh']['tri'], a['rh']['vert'], color=(0.8, 0.8, 0.8), opacity=opacity, new_fig=False)
+            mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(
+                a['lh']['tri'], a['lh']['vert'], color=(0.8, 0.8, 0.8),
+                opacity=opacity
+            )
+            mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(
+                a['rh']['tri'], a['rh']['vert'], color=(0.8, 0.8, 0.8),
+                opacity=opacity, new_fig=False)
 
         # Add the electrodes, colored by anatomical region
-        elec_colors = np.zeros((e['elecmatrix'].shape[0], e['elecmatrix'].shape[1]))
-
-        # Import freesurfer color lookup table as a dictionary
-        cmap = FS_colorLUT.get_lut()
-
-        if self.hem=='lh':
-            label_offset=-1.5
-        elif self.hem=='rh':
-            label_offset=1.5
-        else:
-            label_offset=1.5
-
-        # Find all the unique brain areas in this subject
-        brain_areas = np.unique(e['anatomy'][:,3])
-
-        # Loop through unique brain areas and find the appropriate color for each brain area from the color LUT dictionary
-        if self.hem=='stereo':
-            label_hem = 'lh'
-        else:
-            label_hem = self.hem
-
-        good_labels = []
-        color_list = []
-        for b in brain_areas:
-            # Add relevant extra information to the label if needed for the color LUT
-            if b[0][0] != 'NaN':
-                this_label = b[0]
-                good_labels.append(this_label)
-                if b[0][0:3]!='ctx' and b[0][0:4] != 'Left' and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain' and b[0] != 'Unknown':
-                    this_label = 'ctx-%s-%s'%(label_hem, b[0])
-                    print(this_label)
-
-                if this_label != '' and this_label != 'NaN':
-                    if this_label not in cmap:
-                        # in case the label was manually assigned, and not
-                        #  found in the LUT colormap dictionary
-                        el_color = matplotlib.cm.get_cmap('viridis').colors[
-                            int(float(np.where(brain_areas == b)[0])/float(len(
-                                brain_areas)))]
-                    else:
-                        el_color = np.array(cmap[this_label])/255.
-                    color_list.append(el_color)
-            elec_indices = np.where(e['anatomy'][:,3]==b)[0]
-            elec_colors[elec_indices,:] = el_color
+        good_labels, color_list, elec_colors = self.get_electrode_colors(e)
 
         if show_numbers:
             if self.zero_indexed_electrodes:
                 elec_numbers = range(e['elecmatrix'].shape[0])
             else:
-                elec_numbers = range(1,e['elecmatrix'].shape[0]+1)
+                elec_numbers = range(1, e['elecmatrix'].shape[0]+1)
         else:
             elec_numbers = None
-
-        # ...
-        if COLOR_ELECTRODES is False:
-            elec_colors = 0*elec_colors + 0.25
-
+        label_offset = -1.5 if self.hem == 'lh' else 1.5
         ctmr_brain_plot.el_add(
             e['elecmatrix'], elec_colors, numbers=elec_numbers,
             label_offset=label_offset, msize=marker_size
@@ -2438,6 +2411,50 @@ class freeCoG:
         if showfig:
             mlab.show()
         return subj_mesh, template_mesh, mlab
+
+    def get_electrode_colors(self, e):
+
+        from .SupplementalFiles import FS_colorLUT as FS_colorLUT
+
+        # Import freesurfer color lookup table as a dictionary
+        cmap = FS_colorLUT.get_lut()
+
+        # Find all the unique brain areas in this subject
+        brain_areas = np.unique(e['anatomy'][:, 3])
+
+        # init
+        label_hem = 'lh' if self.hem == 'stereo' else self.hem
+        elec_colors = np.zeros(e['elecmatrix'].shape)
+        good_labels = []
+        color_list = []
+
+        # Loop through unique brain areas and find the appropriate color for
+        #  each brain area from the color LUT dictionary
+        for b in brain_areas:
+            # Add relevant extra information to the label if needed for the color LUT
+            if b[0][0] != 'NaN':
+                this_label = b[0]
+                good_labels.append(this_label)
+                if (b[0][0:3] != 'ctx' and b[0][0:4] != 'Left'
+                        and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain'
+                        and b[0] != 'Unknown'):
+                    this_label = 'ctx-%s-%s' % (label_hem, b[0])
+                    print(this_label)
+
+                if this_label != '' and this_label != 'NaN':
+                    if this_label not in cmap:
+                        # in case the label was manually assigned, and not
+                        #  found in the LUT colormap dictionary
+                        el_color = matplotlib.cm.get_cmap('viridis').colors[
+                            int(float(np.where(brain_areas == b)[0])/float(len(
+                                brain_areas)))]
+                    else:
+                        el_color = np.array(cmap[this_label])/255.
+                    color_list.append(el_color)
+            elec_indices = np.where(e['anatomy'][:, 3] == b)[0]
+            elec_colors[elec_indices, :] = el_color
+
+        return good_labels, color_list, elec_colors
 
     def make_roi_mesh(self, roi_name, label_list, hem=None, showfig=False, save=True):
 
