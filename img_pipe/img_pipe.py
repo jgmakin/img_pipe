@@ -2146,6 +2146,7 @@ class freeCoG:
         self, elecfile_prefix='TDT_elecs_all', template=None, showfig=True,
         screenshot=False, opacity=1.0, show_numbers=True,
         marker_size=2, GRID_ONLY=False, SHOW_TITLE=True, save_dir=None,
+        good_labels=None, color_list=None, elec_colors=None
     ):
         '''
         Plot the brain along with all of the anatomically labeled electrodes, colored by location using freesurfer
@@ -2187,8 +2188,11 @@ class freeCoG:
                 opacity=opacity, new_fig=False)
 
         # Add the electrodes, colored by anatomical region
-        good_labels, color_list, elec_colors = self.get_electrode_colors(e)
+        if any([arg is None for arg in [good_labels, color_list, elec_colors]]):
+            # not provided; fetch the standard ones
+            good_labels, color_list, elec_colors = self.get_electrode_colors(e)
 
+        # label the electrode numbers?
         if show_numbers:
             if self.zero_indexed_electrodes:
                 elec_numbers = range(e['elecmatrix'].shape[0])
@@ -2197,6 +2201,8 @@ class freeCoG:
         else:
             elec_numbers = None
         label_offset = -1.5 if self.hem == 'lh' else 1.5
+
+        # plot
         ctmr_brain_plot.el_add(
             e['elecmatrix'], elec_colors, numbers=elec_numbers,
             label_offset=label_offset, msize=marker_size

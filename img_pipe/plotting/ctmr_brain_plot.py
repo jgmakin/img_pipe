@@ -163,12 +163,12 @@ def el_add(
             size of the electrode.  default = 2
         label_offset : float
             how much to move the number labels out by (so not blocked by electrodes)
-        **kwargs : 
+        **kwargs :
             any other keyword arguments that can be passed to points3d
     '''
-    
+
     # Get the current keyword arguments
-    cur_kwargs = dict(color = color, scale_factor = msize, resolution=25)
+    cur_kwargs = dict(color=color, scale_factor=msize, resolution=25)
 
     # Allow the user to override the default keyword arguments using kwargs
     cur_kwargs.update(kwargs)
@@ -185,7 +185,7 @@ def el_add(
             # Why 1/20?  Not sure, but that appears to be produce the same size
             #  spheres as the old method.
             ####
-        points = mlab.points3d(elecs[:,0], elecs[:,1], elecs[:,2], **cur_kwargs)
+        points = mlab.points3d(elecs[:, 0], elecs[:, 1], elecs[:, 2], **cur_kwargs)
         points.glyph.scale_mode = 'scale_by_vector'
         sc = tvtk.UnsignedCharArray()
         sc.from_array(color*256)
