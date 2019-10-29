@@ -148,10 +148,11 @@ def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
 def el_add(
     elecs, color=(1., 0., 0.), msize=2, numbers=None, label_offset=-1.0,
     ambient=0.3261, specular=1, specular_power=16, diffuse=0.6995,
-    interpolation='phong', elec_sizes=None, **kwargs):
+    interpolation='phong', elec_sizes=None, **kwargs
+):
     '''This function adds the electrode matrix [elecs] (nchans x 3) to
     the scene.
-    
+
     Parameters
     ----------
         elecs : array-like

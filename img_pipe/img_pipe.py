@@ -555,19 +555,17 @@ class freeCoG:
         corner_file = os.path.join(self.elecs_dir, 'individual_elecs', grid_basename+'_corners.mat')
         scipy.io.savemat(corner_file, {'elecmatrix': cornermatrix})
 
-
-
-    def project_electrodes(self, elecfile_prefix='hd_grid', use_mean_normal=True, \
-                                 surf_type='dural', \
-                                 num_iter=30, dilate=0.0, grid=True,
-                                 convex_hull=True):
+    def project_electrodes(
+        self, elecfile_prefix='hd_grid', use_mean_normal=True,
+        surf_type='dural', num_iter=30, dilate=0.0, grid=True, convex_hull=True
+    ):
         '''
         Project electrodes to the brain's surface to correct for deformation.
-        
+
         By default, projects the electrodes of a grid based on the mean normal vector of the four grid
         corner electrodes that were manually localized from the registered CT. Can also project strips
         and individual electrodes if grid=False (you will be prompted for a projection direction).
-        
+
         Parameters
         ----------
         elecfile_prefix : str, optional
@@ -595,7 +593,7 @@ class freeCoG:
         None
 
         '''
-        
+
         from .surface_warping_scripts.project_electrodes_anydirection import project_electrodes_anydirection
 
         print('Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t \
@@ -1856,7 +1854,7 @@ class freeCoG:
         '''
 
         e = {'elecmatrix': [], 'anatomy': []}
-        elecfile = os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix))
+        elecfile = os.path.join(self.elecs_dir, '%s.mat' % (elecfile_prefix))
         if os.path.isfile(elecfile):
             e = scipy.io.loadmat(elecfile)
             if roi is not None:
@@ -1864,10 +1862,12 @@ class freeCoG:
                 elecmatrix = e['elecmatrix'][roi_indices, :]
                 anatomy = e['anatomy'][roi_indices, :]
             else:
-                elecfile = scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
+                elecfile = scipy.io.loadmat(os.path.join(
+                    self.elecs_dir, '%s.mat' % (elecfile_prefix)))
                 return elecfile
 
-            e = {'elecmatrix': elecmatrix, 'anatomy': anatomy} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
+            e = {'elecmatrix': elecmatrix, 'anatomy': anatomy}
+            # {'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
         else:
             print('File not found: %s' % (elecfile))
         return e
@@ -2146,18 +2146,18 @@ class freeCoG:
         self, elecfile_prefix='TDT_elecs_all', template=None, showfig=True,
         screenshot=False, opacity=1.0, show_numbers=True,
         marker_size=2, GRID_ONLY=False, SHOW_TITLE=True, save_dir=None,
-        good_labels=None, color_list=None, elec_colors=None
+        good_labels=None, color_list=None, elec_colors=None, elec_locs=None
     ):
         '''
-        Plot the brain along with all of the anatomically labeled electrodes, colored by location using freesurfer
-        color lookup table.
+        Plot the brain along with all of the anatomically labeled electrodes,
+        colored by location using freesurfer color lookup table.
 
         Parameters
         ----------
         elecfile_prefix : str, optional
-            prefix of the .mat file with the electrode coordinates matrix 
+            prefix of the .mat file with the electrode coordinates matrix
         template : str, optional
-            Name of the template to use if plotting electrodes on an atlas brain
+            Name of template to use if plotting electrodes on an atlas brain
         showfig : bool
             Whether to show the figure or not
         screenshot : bool
@@ -2172,7 +2172,16 @@ class freeCoG:
         save_dir = self.patient_dir if save_dir is None else save_dir
 
         a = self.get_surf(template=template)
-        e = self.get_elecs(elecfile_prefix=elecfile_prefix)
+        if elecfile_prefix is None:
+            args = [good_labels, color_list, elec_colors, elec_locs]
+            assert not any([arg is None for arg in args]), (
+                'If elecfile_prefix is None, then good_labels, color_list,'
+                ' elec_colors, and elec_locs must not be!')
+
+        else:
+            e = self.get_elecs(elecfile_prefix=elecfile_prefix)
+            good_labels, color_list, elec_colors = self.get_electrode_colors(e)
+            elec_locs = e['elecmatrix']
 
         # Plot the pial surface
         if self.hem == 'lh' or self.hem == 'rh':
@@ -2187,24 +2196,19 @@ class freeCoG:
                 a['rh']['tri'], a['rh']['vert'], color=(0.8, 0.8, 0.8),
                 opacity=opacity, new_fig=False)
 
-        # Add the electrodes, colored by anatomical region
-        if any([arg is None for arg in [good_labels, color_list, elec_colors]]):
-            # not provided; fetch the standard ones
-            good_labels, color_list, elec_colors = self.get_electrode_colors(e)
-
         # label the electrode numbers?
         if show_numbers:
             if self.zero_indexed_electrodes:
-                elec_numbers = range(e['elecmatrix'].shape[0])
+                elec_numbers = range(elec_locs.shape[0])
             else:
-                elec_numbers = range(1, e['elecmatrix'].shape[0]+1)
+                elec_numbers = range(1, elec_locs.shape[0]+1)
         else:
             elec_numbers = None
         label_offset = -1.5 if self.hem == 'lh' else 1.5
 
         # plot
         ctmr_brain_plot.el_add(
-            e['elecmatrix'], elec_colors, numbers=elec_numbers,
+            elec_locs, elec_colors, numbers=elec_numbers,
             label_offset=label_offset, msize=marker_size
         )
 
@@ -2271,10 +2275,12 @@ class freeCoG:
         num_timepoints = erp_matrix.shape[1]
         num_channels = erp_matrix.shape[0]
 
-        mesh, points, mlab, arr, f = self.plot_brain(showfig=False, helper_call=True)
+        mesh, points, mlab, arr, f = self.plot_brain(
+            showfig=False, helper_call=True)
         elecmatrix = self.get_elecs()['elecmatrix']
         if anat_colored:
-            anatomy_labels = scipy.io.loadmat(os.path.join(self.elecs_dir, elecfile_prefix+'.mat'))['anatomy'][:,3]
+            anatomy_labels = scipy.io.loadmat(os.path.join(
+                self.elecs_dir, elecfile_prefix+'.mat'))['anatomy'][:, 3]
 
         brain_areas = np.unique(anatomy_labels)
         for c in range(num_channels):
@@ -2282,13 +2288,16 @@ class freeCoG:
                 b = anatomy_labels[c]
                 if b != 'NaN':
                     this_label = b[0]
-                    if b[0][0:3]!='ctx' and b[0][0:4] != 'Left' and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain' and b[0] != 'Unknown':
+                    if b[0][0:3] != 'ctx' and b[0][0:4] != 'Left' and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain' and b[0] != 'Unknown':
                         this_label = 'ctx-%s-%s'%('lh', b[0])
 
                     if this_label != '':
                         if this_label not in cmap:
-                            #in case the label was manually assigned, and not found in the LUT colormap dictionary
-                            erp_color = matplotlib.cm.get_cmap('viridis').colors[int(float(np.where(brain_areas==b)[0])/float(len(brain_areas)))]
+                            # in case the label was manually assigned, and not
+                            #  found in the LUT colormap dictionary
+                            erp_color = matplotlib.cm.get_cmap(
+                                'viridis').colors[int(float(np.where(
+                                    brain_areas == b)[0])/float(len(brain_areas)))]
                         else:
                             erp_color = np.array(cmap[this_label])/255.
             else:
@@ -2306,10 +2315,10 @@ class freeCoG:
                 y_array = ((np.array([i for i in range(num_timepoints/2-num_timepoints,num_timepoints/2)]))*time_scale_factor+elec_coord[1])
 
             x_array = np.array([elec_coord[0] for i in range(num_timepoints)])+label_offset
-            
+
             z_array = erp*z_scale_factor+elec_coord[2]
             mlab.plot3d(x_array, y_array, z_array, figure=mlab.gcf(),color=(erp_color),tube_radius=0.15,tube_sides=3)
-        
+
         mlab.view(distance=300)
 
         arr = mlab.screenshot(antialiased=True)
@@ -2328,7 +2337,7 @@ class freeCoG:
                                           showfig=True, screenshot=False, opacity=1.0):
         ''' This plots two brains, one in native space, one in the template space, showing
         the native space and warped electrodes for ease of comparison/quality control.
-        
+
         Parameters
         ----------
         template : str, optional
@@ -2353,16 +2362,16 @@ class freeCoG:
         # Get native space and warped electrodes
         subj_e = self.get_elecs(elecfile_prefix=elecfile_prefix)
         template_e = self.get_elecs(elecfile_prefix=elecfile_prefix+'_warped')
-        
+
         subj_brain_width = np.abs(np.max(subj_brain['vert'][:,1])-np.min(subj_brain['vert'][:,1]))
         template_brain_width = np.abs(np.max(template_brain['vert'][:,1])-np.min(template_brain['vert'][:,1]))
-        
+
         subj_e['elecmatrix'][:,1] = subj_e['elecmatrix'][:,1]-((subj_brain_width+template_brain_width)/4)
         template_e['elecmatrix'][:,1] = template_e['elecmatrix'][:,1]+((subj_brain_width+template_brain_width)/4)
 
         subj_brain['vert'][:,1] = subj_brain['vert'][:,1]-((subj_brain_width+template_brain_width)/4)
         template_brain['vert'][:,1] = template_brain['vert'][:,1]+((subj_brain_width+template_brain_width)/4)
-        
+
         # Plot the pial surface
         subj_mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(subj_brain['tri'], subj_brain['vert'], color=(0.8, 0.8, 0.8))
         template_mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(template_brain['tri'], template_brain['vert'], color=(0.8, 0.8, 0.8),new_fig=False)
@@ -2411,7 +2420,7 @@ class freeCoG:
 
         arr = mlab.screenshot(antialiased=True)
         if screenshot:
-            plt.figure(figsize=(20,10))
+            plt.figure(figsize=(20, 10))
             plt.imshow(arr, aspect='equal')
             plt.axis('off')
             plt.show()
